@@ -1,0 +1,42 @@
+-- QUAL O DIA COM MAIOR ENGAJAMENTO DE CADA ALUNO QUE INICIOU O CURSO NO DIA 01 
+
+WITH TB_FIRST_DAY_CLIENTS AS (
+    SELECT DISTINCT IdCliente
+    FROM transacoes
+    WHERE SUBSTR(DtCriacao,1,10) = '2025-08-25'
+),
+
+TB_CLIENTS AS (
+    SELECT *
+    FROM transacoes
+    WHERE SUBSTR(DtCriacao,1,10) >= '2025-08-25'
+    AND SUBSTR(DtCriacao,1,10) < '2025-08-30'
+),
+
+TB_JOIN AS (
+    SELECT 
+        T1.IdCliente,
+        COUNT(T1.IdCliente) AS TOTAL,
+       SUBSTR(T2.DtCriacao,1,10) AS DAY
+    FROM TB_FIRST_DAY_CLIENTS AS T1
+
+    LEFT JOIN TB_CLIENTS AS T2
+    ON T1.IdCliente = T2.IdCliente
+
+    GROUP BY T1.IdCliente, DAY
+),
+
+WINDOW_FUNCTION AS (
+    SELECT *,
+        -- enumerar cada idcliente poe id
+        ROW_NUMBER() OVER (PARTITION BY IdCliente ORDER BY TOTAL DESC, DAY) AS RN
+    FROM TB_JOIN
+)
+
+SELECT 
+    IdCliente,
+    DAY,
+    TOTAL
+FROM WINDOW_FUNCTION
+WHERE RN = 1
+ORDER BY TOTAL DESC

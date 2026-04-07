@@ -1,0 +1,21 @@
+-- SALDO ACUMULADO DE CADA USUARIO 
+
+WITH TB_CLIENT AS (
+    SELECT 
+        DISTINCT IdCliente,
+        SUBSTR(DtCriacao,1,10) AS DATE,
+        SUM(QtdePontos) AS SALDO,
+        SUM(CASE WHEN QtdePontos > 0 THEN QtdePontos ELSE 0 END) AS TOTAL
+    FROM transacoes
+    GROUP BY IdCliente, DATE
+),
+
+TB_ACUM AS (
+    SELECT *,
+        SUM(SALDO) OVER (PARTITION BY IdCliente ORDER BY DATE) AS ACUM_SALDO,
+        SUM(TOTAL) OVER (PARTITION BY IdCliente ORDER BY DATE) AS ACUM_TOTAL
+    FROM TB_CLIENT
+)
+
+SELECT *
+FROM TB_ACUM 
